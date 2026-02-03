@@ -15,24 +15,28 @@ To create a Hadoop cluster in the GCP Console with default values (Master and Wo
     - **Cluster Name**: Give it a name (e.g., `hadoop-cluster`).
     - **Region/Zone**: Choose your preferred region (e.g., `us-central1`).
     - **Cluster Type**: Set to **Standard (1 master, N workers)**. By default, it usually comes with 2 worker nodes.
-    - **Components**: Ensure the default Hadoop/Spark components are selected.
+    - **Components (Recommended for Spark/Jupyter)**: 
+        - Click **Component Gateway** and check **Enable component gateway**.
+        - Under **Optional components**, click **Add** and select **Jupyter Notebook**.
 5.  **Defaults**: Leave all other settings (Machine type, Disk size, etc.) as default.
 6.  **Create**: Click the **Create** button. It will take a few minutes to provision the VMs and set up Hadoop.
 
 ### Create via gcloud CLI
 
-Alternatively, you can create the same cluster using the `gcloud` command-line tool. Ensure you have the Google Cloud SDK installed and initialized.
+Alternatively, you can create the same cluster using the `gcloud` command-line tool. **Note:** We are adding Spark-ready options (`enable-component-gateway` and `JUPYTER`) now to avoid recreating the cluster later.
 
 ```bash
 gcloud dataproc clusters create hadoop-cluster \
     --region=us-central1 \
     --num-workers=2 \
-    --master-machine-type=n1-standard-2 \
-    --worker-machine-type=n1-standard-2 \
-    --image-version=2.0-debian10
+    --master-machine-type=n1-standard-4 \
+    --worker-machine-type=n1-standard-4 \
+    --image-version=2.1-debian11 \
+    --enable-component-gateway \
+    --optional-components=JUPYTER
 ```
 
-*Note: Replace `us-central1` with your desired region and adjust machine types if necessary.*
+*Note: Replace `us-central1` with your desired region. We use `n1-standard-4` to ensure sufficient RAM for Spark and Jupyter later.*
 
 ---
 
