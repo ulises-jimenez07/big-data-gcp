@@ -64,7 +64,7 @@ A **Managed Table** (or Internal Table) is managed entirely by Hive. If you drop
 Launch the Hive CLI by typing `hive` or use `beeline` on your master node.
 
 ### Create an External Table
-This table will map to the CSV we just uploaded. Note the `skip.header.line.count` property to ignore the CSV header.
+This table uses the **OpenCSVSerde** because BigQuery CSV exports often wrap text in quotes. A simple comma-split would fail for descriptions containing commas (e.g., "THEFT: OVER $500").
 
 ```sql
 CREATE EXTERNAL TABLE crime_staging (
@@ -76,27 +76,31 @@ CREATE EXTERNAL TABLE crime_staging (
     primary_type STRING,
     description STRING,
     location_description STRING,
-    arrest BOOLEAN,
-    domestic BOOLEAN,
-    beat INT,
-    district INT,
-    ward INT,
-    community_area INT,
+    arrest STRING,
+    domestic STRING,
+    beat STRING,
+    district STRING,
+    ward STRING,
+    community_area STRING,
     fbi_code STRING,
-    x_coordinate FLOAT,
-    y_coordinate FLOAT,
-    year INT,
+    x_coordinate STRING,
+    y_coordinate STRING,
+    year STRING,
     updated_on STRING,
-    latitude FLOAT,
-    longitude FLOAT,
+    latitude STRING,
+    longitude STRING,
     location STRING
 )
-ROW FORMAT DELIMITED
-FIELDS TERMINATED BY ','
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+   "separatorChar" = ",",
+   "quoteChar"     = "\""
+)
 STORED AS TEXTFILE
 LOCATION '/user/hive/warehouse/chicago_crime_raw'
 TBLPROPERTIES ("skip.header.line.count"="1");
 ```
+*Note: OpenCSVSerde treats all columns as STRING. We will cast them to proper types when moving data to our partitioned ORC table.*
 
 ### Basic Querying
 ```sql
@@ -141,9 +145,9 @@ SET hive.exec.dynamic.partition.mode=nonstrict;
 SET hive.exec.max.dynamic.partitions=1000;
 SET hive.exec.max.dynamic.partitions.pernode=1000;
 
--- Insert data from staging
+-- Insert data from staging (Casting the 'year' to INT)
 INSERT INTO TABLE crime_partitioned PARTITION(year)
-SELECT unique_key, case_number, crime_date, primary_type, description, arrest, year 
+SELECT unique_key, case_number, crime_date, primary_type, description, CAST(arrest AS BOOLEAN), CAST(year AS INT)
 FROM crime_staging;
 ```
 
