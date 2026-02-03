@@ -271,3 +271,48 @@ GROUP BY primary_type
 HAVING total > 50000
 ORDER BY total DESC;
 ```
+
+---
+
+## 9. Verifying Storage and Performance
+
+After creating advanced tables, it's crucial to understand how Hive organizes data physically and how it optimizes your queries.
+
+### 9.1: Inspecting HDFS Structure
+Hive creates a hierarchical folder structure for partitioned tables and fixed-size files for bucketed tables.
+
+```bash
+# 1. View Partitioned Table Structure
+# You will see one folder per year (e.g., year=2001, year=2002...)
+hdfs dfs -ls /user/hive/warehouse/crime_partitioned
+
+# 2. View contents of a specific partition
+# Inside, you'll see the ORC files for that specific year
+hdfs dfs -ls /user/hive/warehouse/crime_partitioned/year=2020
+
+# 3. View Bucketed Table Structure
+# You will see exactly 10 files (matching the number of buckets defined)
+hdfs dfs -ls /user/hive/warehouse/crime_bucketed
+```
+
+### 9.2: Comparing Performance with `EXPLAIN`
+The `EXPLAIN` command shows the execution plan of a query. You can use it to verify **Partition Pruning**.
+
+#### Query 1: Full Table Scan (Slow)
+If you query a non-partitioned table (like `crime_staging`), Hive must read every single file in the directory.
+```sql
+EXPLAIN SELECT count(*) FROM crime_staging WHERE year = '2020';
+```
+*Look for: "TableScan" without any partition filters.*
+
+#### Query 2: Partition Pruning (Fast)
+When querying the partitioned table, Hive "prunes" the partitions and only reads the folder corresponding to 2020.
+```sql
+EXPLAIN SELECT count(*) FROM crime_partitioned WHERE year = 2020;
+```
+*Look for: "partitionCount: 1" or specific paths pointing to the `year=2020` folder in the plan.*
+
+### 9.3: Why does this matter?
+- **Partitioning**: Reduces I/O by skipping unnecessary folders. Ideal for high-cardinality columns you frequently filter by (Date, Country, Department).
+- **Bucketing**: Enables "Map-Side Joins" when two tables are bucketed on the same column, and allows for efficient sampling of large datasets.
+- **ORC/Parquet**: These columnar formats allow Hive to only read the specific columns needed for a query (e.g., just `primary_type`), further reducing disk read time.
