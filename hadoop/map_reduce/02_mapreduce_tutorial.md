@@ -60,21 +60,21 @@ Your objective is to create the Python scripts required to perform a distributed
 
 ### Reference Solutions
 If you get stuck, you can refer to the optimized implementations already provided in the repository:
-- **Mapper Solution**: `hadoop/map_reduce_py/wc_mapper.py`
-- **Reducer Solution**: `hadoop/map_reduce_py/wc_reducer.py`
+- **Mapper Solution**: `hadoop/map_reduce/wc_mapper.py`
+- **Reducer Solution**: `hadoop/map_reduce/wc_reducer.py`
 
 ### Testing the Scripts Locally
 To test the logic before running it on a cluster, you can use standard Linux pipes and Gutenberg books as test data.
 
 #### Step 1: Download Test Data
 ```bash
-wget https://www.gutenberg.org/ebooks/20417.txt.utf-8
-wget https://www.gutenberg.org/files/5000/5000-8.txt
-wget https://www.gutenberg.org/files/4300/4300-0.txt
+wget https://www.gutenberg.org/cache/epub/20417/pg20417.txt
+wget https://www.gutenberg.org/cache/epub/5000/pg5000.txt
+wget https://www.gutenberg.org/cache/epub/4300/pg4300.txt
 ```
 
 #### Step 2: Run Local Simulation
 ```bash
-cat 20417.txt.utf-8 | python3 wc_mapper.py | sort -k1,1 | python3 wc_reducer.py
+cat pg20417.txt | python3 wc_mapper.py | sort -k1,1 | python3 wc_reducer.py
 ```
 *Note: The `sort` command simulates the Hadoop Shuffle & Sort phase.*
