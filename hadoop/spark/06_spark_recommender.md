@@ -35,10 +35,8 @@ spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 
 # Load activity data
 # We'll take a sample of questions, their owners, and the tags
-raw_df = spark.read.format("com.google.cloud.spark.bigquery") \
+raw_df = spark.read.format("bigquery") \
     .option("table", "bigquery-public-data.stackoverflow.posts_questions") \
-    .option("parentProject", "[YOUR_PROJECT_ID]") \
-    .option("viewsEnabled", "true") \
     .load() \
     .select("owner_user_id", "tags", "score") \
     .filter("owner_user_id IS NOT NULL AND tags IS NOT NULL") \
