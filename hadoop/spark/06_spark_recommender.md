@@ -15,6 +15,17 @@ Collaborative filtering works by building a user-item matrix. If User A and User
 We will use the `posts_questions` dataset. We'll treat a user's score on a specific tag as their "rating" for that topic.
 
 ```python
+from pyspark.sql import SparkSession
+
+# Initialize Spark with Hive support
+spark = SparkSession.builder \
+    .appName("Spark External Integration") \
+    .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
+    .enableHiveSupport() \
+    .getOrCreate()
+```
+
+```python
 from pyspark.ml.recommendation import ALS
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml import Pipeline
@@ -24,8 +35,10 @@ spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 
 # Load activity data
 # We'll take a sample of questions, their owners, and the tags
-raw_df = spark.read.format("bigquery") \
+raw_df = spark.read.format("com.google.cloud.spark.bigquery") \
     .option("table", "bigquery-public-data.stackoverflow.posts_questions") \
+    .option("parentProject", "[YOUR_PROJECT_ID]") \
+    .option("viewsEnabled", "true") \
     .load() \
     .select("owner_user_id", "tags", "score") \
     .filter("owner_user_id IS NOT NULL AND tags IS NOT NULL") \
@@ -35,8 +48,9 @@ raw_df = spark.read.format("bigquery") \
 # and convert strings to numeric IDs for ALS
 raw_df = raw_df.withColumn("main_tag", col("tags").substr(2, 5)) # Simplified
 
-user_indexer = StringIndexer(inputCol="owner_user_id", outputCol="user_id_num")
-tag_indexer = StringIndexer(inputCol="main_tag", outputCol="tag_id_num")
+# We use handleInvalid="keep" to handle categories that might only appear in the transform phase
+user_indexer = StringIndexer(inputCol="owner_user_id", outputCol="user_id_num", handleInvalid="keep")
+tag_indexer = StringIndexer(inputCol="main_tag", outputCol="tag_id_num", handleInvalid="keep")
 
 pipeline = Pipeline(stages=[user_indexer, tag_indexer])
 processed_df = pipeline.fit(raw_df).transform(raw_df)

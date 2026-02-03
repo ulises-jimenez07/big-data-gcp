@@ -67,5 +67,4 @@ You can check your progress outside of the notebook:
 ```bash
 # Check Hive
 hive -e "SHOW TABLES;"
-
 ```

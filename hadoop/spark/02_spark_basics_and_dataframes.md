@@ -6,6 +6,8 @@ Apache Spark is a distributed compute engine. In Python, we use the `pyspark` li
 
 Every Spark application starts with a `SparkSession`.
 
+> **Note on Errors**: If you see `Cannot call methods on a stopped SparkContext`, it means you ran `spark.stop()` and need to re-run the initialization cell below.
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, count

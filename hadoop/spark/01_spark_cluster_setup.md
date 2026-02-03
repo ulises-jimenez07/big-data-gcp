@@ -73,3 +73,40 @@ spark.stop()
 ```
 
 If it prints the Spark version (e.g., `3.3.2`), your cluster is ready!
+
+## 5. Troubleshooting & Resource Management
+
+If a job freezes or the cluster becomes unresponsive, you may need to manually manage or kill running applications.
+
+### Killing a Job via gcloud
+If you have the Job ID, you can kill it from your local terminal:
+```bash
+gcloud dataproc jobs kill [JOB_ID] --region=[REGION]
+```
+
+### Managing via YARN (Directly on Cluster)
+If a job is "stuck" or not visible in the Jobs list, you can use YARN commands. First, SSH into the **master node**:
+
+```bash
+gcloud compute ssh spark-cluster-m --zone=[ZONE]
+```
+
+Once inside the master node, use the following commands:
+
+**1. List all running applications:**
+```bash
+yarn application -list
+```
+
+**2. Kill a specific application:**
+```bash
+yarn application -kill application_123456789_0001
+```
+
+### Checking Cluster Health
+If the cluster feels slow, check for memory pressure or disk space on the master node:
+```bash
+free -h    # Check memory usage
+df -h      # Check disk space
+top        # See CPU-heavy processes
+```

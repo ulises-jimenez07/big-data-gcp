@@ -7,6 +7,17 @@ In modern Big Data, schemas are rarely flat. Spark excely at handling nested str
 We will pull a sample of GitHub commits.
 
 ```python
+from pyspark.sql import SparkSession
+
+# Initialize Spark with Hive support
+spark = SparkSession.builder \
+    .appName("Spark External Integration") \
+    .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
+    .enableHiveSupport() \
+    .getOrCreate()
+```
+
+```python
 from pyspark.sql.functions import col, explode, size
 
 spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
