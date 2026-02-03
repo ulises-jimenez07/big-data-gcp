@@ -6,7 +6,9 @@ This guide explains how to create a Dataproc cluster optimized for Spark develop
 
 If you followed the **[Hadoop Tutorial](../map_reduce/01_dataproc_hdfs_tutorial.md)** and enabled the **Component Gateway** and **Jupyter**, you are already set up! Spark is included by default in all Dataproc clusters.
 
-If you don't have a cluster yet, or want to create a new one specifically for Spark, follow the instructions below.
+If you don't have a cluster yet, or want to create a new one specifically for Spark, follow the instructions below. 
+
+> **Important**: Ensure your VM service account has `Storage Admin` permissions. See the **[Hadoop Prerequisites](../map_reduce/01_dataproc_hdfs_tutorial.md#1-prerequisites-permissions)** if you encounter "Permissions missing" errors.
 
 ## 2. Creating a Spark Cluster via GCP Console
 

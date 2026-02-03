@@ -2,7 +2,18 @@
 
 This guide covers the basic setup of a Hadoop cluster using Google Cloud Dataproc and fundamental HDFS commands.
 
-## 1. Creating a Dataproc Cluster
+## 1. Prerequisites (Permissions)
+
+Before creating a cluster, ensure the default Compute Engine service account has permissions to manage storage buckets. If you see "Permissions missing" errors, run this command:
+
+```bash
+# Replace [PROJECT_ID] and [PROJECT_NUMBER] with your details
+gcloud projects add-iam-policy-binding [PROJECT_ID] \
+    --member="serviceAccount:[PROJECT_NUMBER]-compute@developer.gserviceaccount.com" \
+    --role="roles/storage.admin"
+```
+
+## 2. Creating a Dataproc Cluster
 
 To create a Hadoop cluster in the GCP Console with default values (Master and Worker nodes), follow these steps:
 
