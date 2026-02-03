@@ -22,8 +22,8 @@ spark = SparkSession.builder \
 The Spark-BigQuery connector requires a temporary GCS bucket to move data.
 
 ```python
-# 1. Configure the mandatory temporary bucket
-spark.conf.set("temporaryGcsBucket", "your-temp-bucket")
+# 1. Configure the mandatory temporary bucket (created in MapReduce tutorial)
+spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 
 # 2. Read from a BigQuery Public Dataset
 # Path format: project.dataset.table

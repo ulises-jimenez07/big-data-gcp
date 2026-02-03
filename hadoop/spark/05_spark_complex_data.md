@@ -9,7 +9,7 @@ We will pull a sample of GitHub commits.
 ```python
 from pyspark.sql.functions import col, explode, size
 
-spark.conf.set("temporaryGcsBucket", "your-temp-bucket")
+spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 
 # Read GitHub commits (highly nested structure)
 commits_df = spark.read.format("bigquery") \

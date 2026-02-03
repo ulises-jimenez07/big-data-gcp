@@ -20,7 +20,7 @@ from pyspark.ml.feature import StringIndexer
 from pyspark.ml import Pipeline
 from pyspark.sql.functions import col
 
-spark.conf.set("temporaryGcsBucket", "your-temp-bucket")
+spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 
 # Load activity data
 # We'll take a sample of questions, their owners, and the tags

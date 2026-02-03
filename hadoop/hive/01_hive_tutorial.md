@@ -21,15 +21,15 @@ First, we export the public dataset to your GCS bucket in CSV format.
 ```bash
 # Set your variables
 PROJECT_ID=$(gcloud config get-value project)
-BUCKET_NAME="your-unique-bucket-name"
+BUCKET_NAME="${PROJECT_ID}-hadoop"
 
-# Create a bucket if you don't have one
-gcloud storage buckets create gs://$BUCKET_NAME
+# (Optional) Create the bucket if you didn't do it in the MapReduce tutorial
+gsutil mb -l us-central1 gs://$BUCKET_NAME
 
-# Extract BigQuery public data to GCS
+# Extract BigQuery public data to GCS (using * for sharding large data)
 bq extract --destination_format=CSV \
     bigquery-public-data:chicago_crime.crime \
-    gs://$BUCKET_NAME/chicago_crime/crime_data.csv
+    gs://$BUCKET_NAME/chicago_crime/crime_data_*.csv
 ```
 
 ### Step 2.2: Move Data to HDFS (Optional but Recommended)
@@ -44,7 +44,7 @@ gcloud compute ssh [CLUSTER_NAME]-m --region=[REGION]
 hdfs dfs -mkdir -p /user/hive/warehouse/chicago_crime_raw
 
 # Copy from GCS to HDFS
-hadoop distcp gs://$BUCKET_NAME/chicago_crime/crime_data.csv /user/hive/warehouse/chicago_crime_raw/
+hadoop distcp gs://$BUCKET_NAME/chicago_crime/crime_data_*.csv /user/hive/warehouse/chicago_crime_raw/
 ```
 
 ---
@@ -132,10 +132,14 @@ STORED AS ORC; -- ORC is optimized for Hive performance
 ```
 
 #### Inserting Data into Partitions
-To enable dynamic partitioning, you must set these Hive properties:
+To enable dynamic partitioning and prevent "too many partitions" errors, you must set these Hive properties:
 ```sql
 SET hive.exec.dynamic.partition=true;
 SET hive.exec.dynamic.partition.mode=nonstrict;
+
+-- Increase limits for many partitions
+SET hive.exec.max.dynamic.partitions=1000;
+SET hive.exec.max.dynamic.partitions.pernode=1000;
 
 -- Insert data from staging
 INSERT INTO TABLE crime_partitioned PARTITION(year)

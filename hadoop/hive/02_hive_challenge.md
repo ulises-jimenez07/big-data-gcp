@@ -8,12 +8,13 @@ Extract the `bikeshare_trips` dataset from BigQuery to your GCS bucket.
 
 ```bash
 # Variables
-BUCKET_NAME="your-unique-bucket-name"
+PROJECT_ID=$(gcloud config get-value project)
+BUCKET_NAME="${PROJECT_ID}-hadoop"
 
-# Extract data
+# Extract data (using * for sharding)
 bq extract --destination_format=CSV \
     bigquery-public-data:austin_bikeshare.bikeshare_trips \
-    gs://$BUCKET_NAME/austin_bikeshare/trips.csv
+    gs://$BUCKET_NAME/austin_bikeshare/trips_*.csv
 ```
 
 ## 2. Your Mission

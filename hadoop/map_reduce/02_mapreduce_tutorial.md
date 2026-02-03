@@ -70,21 +70,37 @@ To test the logic before running it on a cluster, you can use standard Linux pip
 echo "foo foo quux labs foo bar quux" | python3 wc_mapper.py | sort -k1,1 | python3 wc_reducer.py
 ```
 
+#### Step 0: Create a Central Storage Bucket
+This bucket will store our datasets and will be reused in future tutorials (Hive and Spark). Run this in your **Cloud Shell**:
+
+```bash
+# Get your Project ID
+PROJECT_ID=$(gcloud config get-value project)
+BUCKET_NAME="${PROJECT_ID}-hadoop"
+
+# Create the bucket (Standard storage, in your preferred region)
+gsutil mb -l us-central1 gs://$BUCKET_NAME/
+```
+
 #### Step 1: Download Test Data (Local or Cloud Shell)
 If your Dataproc cluster does not have internet access, run these commands in your **local terminal** or **GCP Cloud Shell** instead:
 
 ```bash
+# Set your bucket name (if not already set)
+BUCKET_NAME="[PROJECT_ID]-hadoop"
+
 # Download to your local environment
 wget https://www.gutenberg.org/cache/epub/20417/pg20417.txt
 
 # Upload to your project's bucket
-gsutil cp pg20417.txt gs://[YOUR_BUCKET_NAME]/
+gsutil cp pg20417.txt gs://$BUCKET_NAME/
 ```
 
 #### Step 2: Transfer to Master VM
 Now, inside your **Dataproc Master VM**, pull the file from the bucket:
 ```bash
-gsutil cp gs://[YOUR_BUCKET_NAME]/pg20417.txt .
+BUCKET_NAME="[PROJECT_ID]-hadoop"
+gsutil cp gs://$BUCKET_NAME/pg20417.txt .
 ```
 
 #### Step 3: Run Local Simulation
