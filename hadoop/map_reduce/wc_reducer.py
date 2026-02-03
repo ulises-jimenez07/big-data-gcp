@@ -20,8 +20,12 @@ def main():
         word_counts[word] = word_counts.get(word, 0) + count
 
     # Print final word counts
-    for word, count in word_counts.items():
-        print('%s\t%s' % (word, count))
+    try:
+        for word, count in word_counts.items():
+            print('%s\t%s' % (word, count))
+    except BrokenPipeError:
+        # Pager (like head) closed the incoming pipe
+        pass
 
 if __name__ == "__main__":
     main()

@@ -66,14 +66,29 @@ If you get stuck, you can refer to the optimized implementations already provide
 ### Testing the Scripts Locally
 To test the logic before running it on a cluster, you can use standard Linux pipes and Gutenberg books as test data.
 
-#### Step 1: Download Test Data
 ```bash
-wget https://www.gutenberg.org/cache/epub/20417/pg20417.txt
-wget https://www.gutenberg.org/cache/epub/5000/pg5000.txt
-wget https://www.gutenberg.org/cache/epub/4300/pg4300.txt
+echo "foo foo quux labs foo bar quux" | python3 wc_mapper.py | sort -k1,1 | python3 wc_reducer.py
 ```
 
-#### Step 2: Run Local Simulation
+#### Step 1: Download Test Data (Local or Cloud Shell)
+If your Dataproc cluster does not have internet access, run these commands in your **local terminal** or **GCP Cloud Shell** instead:
+
+```bash
+# Download to your local environment
+wget https://www.gutenberg.org/cache/epub/20417/pg20417.txt
+
+# Upload to your project's bucket
+gsutil cp pg20417.txt gs://[YOUR_BUCKET_NAME]/
+```
+
+#### Step 2: Transfer to Master VM
+Now, inside your **Dataproc Master VM**, pull the file from the bucket:
+```bash
+gsutil cp gs://[YOUR_BUCKET_NAME]/pg20417.txt .
+```
+
+#### Step 3: Run Local Simulation
+Now you can run the logic locally on the Master VM to test your scripts:
 ```bash
 cat pg20417.txt | python3 wc_mapper.py | sort -k1,1 | python3 wc_reducer.py
 ```
