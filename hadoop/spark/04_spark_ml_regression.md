@@ -67,6 +67,8 @@ print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
 # You can also access the R2 summary from the model
 summary = model.stages[-1].summary
 print(f"R2 (Coefficient of Determination): {summary.r2:.4f}")
+
+spark.stop()
 ```
 
 ## 4. Why Pipelines?

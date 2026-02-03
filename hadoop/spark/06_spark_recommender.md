@@ -75,6 +75,8 @@ flat_recs = user_recs.select("user_id_num", explode("recommendations").alias("re
     .select("user_id_num", "rec.tag_id_num", "rec.rating")
 
 flat_recs.show(10)
+
+spark.stop()
 ```
 
 ## 5. Why ALS?

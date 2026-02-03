@@ -67,6 +67,9 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 print(f"Spark version: {spark.version}")
+
+# Always close the session when done
+spark.stop()
 ```
 
 If it prints the Spark version (e.g., `3.3.2`), your cluster is ready!

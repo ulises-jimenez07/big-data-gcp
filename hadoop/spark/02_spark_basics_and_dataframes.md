@@ -31,10 +31,12 @@ df_hdfs.show()
 Dataproc is natively integrated with GCS using the `gs://` protocol.
 
 ```python
-# Reading a public CSV from GCS
-# Note: Google maintains many public datasets in GCS buckets
-path = "gs://pyspark-tutorial-data/flights.csv" # Example path
-# df = spark.read.csv(path, header=True, inferSchema=True)
+# Use a verified public dataset (small CSV with US states)
+# Alternatively, use data you exported in the Hive tutorial: gs://YOUR_BUCKET/chicago_crime/...
+path = "gs://cloud-samples-data/bigquery/us-states/us-states.csv"
+
+df = spark.read.csv(path, header=True, inferSchema=True)
+df.show(5)
 ```
 
 ## 3. Basic DataFrame Operations
@@ -72,4 +74,12 @@ If you are going to use the same DataFrame multiple times (e.g., in an iterative
 ```python
 df.cache() # Or .persist() for more control over storage level
 df.count() # Action that triggers the actual load and caching
+```
+
+## 6. Closing the Session
+
+It's a best practice to close the `SparkSession` once you are done with your analysis. This releases resources back to the cluster (YARN).
+
+```python
+spark.stop()
 ```

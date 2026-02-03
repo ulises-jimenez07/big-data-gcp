@@ -46,21 +46,12 @@ bq_df.write.mode("overwrite").saveAsTable("hive_taxi_data")
 
 # Verify you can query it via Spark SQL
 spark.sql("SELECT count(*) FROM hive_taxi_data").show()
-```
 
-## 4. Writing Results back to BigQuery
-
-After processing (e.g., after an aggregation or ML prediction), you might want to write the results back to BigQuery for a dashboard.
-
-```python
 # Simple aggregation example
 summary_stats = bq_df.groupBy("trip_seconds").avg("fare")
-
-# Write back to BigQuery (Replace with your project and dataset)
-summary_stats.write.format("bigquery") \
-    .option("table", "your-project-id.your_dataset.taxi_summary") \
-    .mode("overwrite") \
-    .save()
+summary_stats.show()
+# Release resources
+spark.stop()
 ```
 
 ## 5. Why use this Hybrid Architecture?
@@ -77,6 +68,4 @@ You can check your progress outside of the notebook:
 # Check Hive
 hive -e "SHOW TABLES;"
 
-# Check BigQuery results
-bq ls your_dataset
 ```

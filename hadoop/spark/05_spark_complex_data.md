@@ -15,13 +15,13 @@ spark.conf.set("temporaryGcsBucket", "[PROJECT_ID]-hadoop")
 commits_df = spark.read.format("bigquery") \
     .option("table", "bigquery-public-data.github_repos.commits") \
     .load() \
-    .select("commit", "author", "repo_name") \
+    .select("commit", "author", "repo_name", "trailer") \
     .limit(1000)
 
 commits_df.printSchema()
 ```
 
-Notice that `author` is a `struct` (like a dictionary) and `commit` contains a `message`.
+Notice that `author` is a `struct` (like a dictionary) and `trailer` is an `array` of structs containing metadata.
 
 ## 2. Navigating Structs (Dot Notation)
 
@@ -46,8 +46,8 @@ Sometimes a column contains a list (Array). To perform analysis on individual el
 Assume we want to analyze commit "trailers" (like `Signed-off-by`).
 
 ```python
-# Select the 'trailers' array inside the 'commit' struct
-trailers_df = commits_df.select("repo_name", "commit.trailer")
+# Select the 'trailer' array
+trailers_df = commits_df.select("repo_name", "trailer")
 
 # Check how many trailers each commit has
 trailers_count = trailers_df.withColumn("num_trailers", size(col("trailer")))
@@ -71,6 +71,8 @@ top_trailers = exploded_df.groupBy("single_trailer.key") \
     .orderBy(col("count").desc())
 
 top_trailers.show()
+
+spark.stop()
 ```
 
 ## 5. Summary of Functions
