@@ -6,7 +6,9 @@ Your mission is to perform a full Big Data analysis and predictive task using a 
 Analyze the **Hacker News** public dataset to predict whether a story will be popular based on its length and other features, then build a clustering model to group similar stories.
 
 ## Step 1: Data Acquisition
-Read the `bigquery-public-data.hacker_news.stories` table into a Spark DataFrame.
+Read the `bigquery-public-data.hacker_news.full` table into a Spark DataFrame. 
+
+> **Tip for Spark 3.x**: Reading the `stories` view directly can cause a `NullPointerException`. It is more stable to read the `full` table and filter for `type = 'story'`.
 
 ## Step 2: Feature Engineering
 1.  Filter for rows where `score` and `title` are not null.
@@ -21,9 +23,9 @@ Using a **Pipeline**:
 3.  Evaluate using **RMSE**.
 
 ## Step 4: Clustering
-1.  Using the same features (and perhaps more, like `num_comments`), perform a **K-Means clustering** with $k=3$.
+1.  Using the same features (and numerical columns like `descendants`), perform a **K-Means clustering** with $k=3$.
 2.  Assign each story to a cluster ID.
-3.  Summarize each cluster by calculating the average `score` and `num_comments` for each.
+3.  Summarize each cluster by calculating the average `score` and `descendants` for each.
 
 ## Step 5: Save your Results
 Save the summarized clusters into a new BigQuery table in your own project.
