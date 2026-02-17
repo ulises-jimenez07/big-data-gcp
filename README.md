@@ -34,6 +34,26 @@ The repository is organized by technology:
 - [Complex Data](./hadoop/spark/05_spark_complex_data.md): Handling Arrays and Structs from GitHub.
 - [Recommendation Systems](./hadoop/spark/06_spark_recommender.md): Collaborative Filtering with Stack Overflow data.
 - **[Final Spark Challenge](./hadoop/spark/07_spark_challenge.md)**: Complete analysis using Hacker News data.
+### GCS
+- [GCS Basics](./gcs/01_gcs_basics.md): Fundamental concepts of Cloud Storage.
+- [Storage Classes](./gcs/02_storage_classes.md): Choosing the right class for your data.
+- [Lifecycle & Versioning](./gcs/03_lifecycle_versioning.md): Automating data management.
+- **[GCS Challenge](./gcs/05_gcs_challenge.md)**: Practice organizing data buckets.
+
+### BigQuery
+- [Ingestion Tutorial](./big_query/01_bigquery_ingestion_tutorial.md): Loading data into BQ.
+- [SQL Essentials](./big_query/02_bigquery_sql_essentials.md): Best practices for querying.
+- [Advanced Analytics](./big_query/04_advanced_analytics.md): Window functions and complex joins.
+- [BigQuery ML](./big_query/05_bigquery_ml.md): Building models directly in SQL.
+- **[BigQuery Challenge](./big_query/07_bigquery_challenge.md)**: Real-world analysis of NYC taxi data.
+
+### Dataflow & Apache Beam
+- [Beam Intro](./dataflow/01_introduction_to_beam_dataflow.md): Core concepts of the unified model.
+- [ParDo & DoFn](./dataflow/02_beam_concepts_pardo_dofn.md): Custom transformations in Python.
+- [Advanced Beam Patterns](./dataflow/02b_advanced_beam_patterns.md): Branching, Flattening, and Custom Aggregations.
+- [Dataflow Notebooks](./dataflow/03_dataflow_notebooks.md): Interactive development in the console.
+- [End-to-End Pipeline](./dataflow/04_end_to_end_dataflow_pipeline.md): Complete Dataflow job using public data.
+- **[Dataflow Challenge](./dataflow/05_dataflow_challenge.md)**: Crime data analysis challenge.
 
 ## Author
 Ulises Jimenez
