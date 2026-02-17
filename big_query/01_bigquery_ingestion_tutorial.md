@@ -64,9 +64,7 @@ gsutil cp 201501.csv gs://my-bucket-name/flights/raw/
 
 ### Step 2: Load into BigQuery
 ```bash
-bq load --autodetect --source_format=CSV \
-   dsongcp.flights_raw \
-   gs://my-bucket-name/flights/raw/201501.csv
+./bqload.sh my-bucket-name 2015 
 ```
 
 ---
@@ -91,18 +89,41 @@ SELECT
     FORMAT("%s-%02d-%02d",
         Year,
         CAST(Month AS INT64),
-        CAST(DayofMonth AS INT64)) AS flight_date_formatted,
-    FlightDate
+        CAST(DayofMonth AS INT64)) AS resurrect,
+    FlightDate,
+    CAST(EXTRACT(YEAR FROM FlightDate) AS INT64) AS ex_year,
+    CAST(EXTRACT(MONTH FROM FlightDate) AS INT64) AS ex_month,
+    CAST(EXTRACT(DAY FROM FlightDate) AS INT64) AS ex_day,
 FROM dsongcp.flights_raw
 LIMIT 5;
 ```
 
----
+## 5. Creating Views
 
-## Summary of Commands
-| Action | Command |
-| :--- | :--- |
-| Create Dataset | `bq mk [DATASET_ID]` |
-| Load Data | `bq load --autodetect --source_format=[FORMAT] [TABLE] [PATH]` |
-| List Datasets | `bq ls` |
-| List Tables | `bq ls [DATASET_ID]` |
+A View is a virtual table defined by a SQL query. It doesn't store data itself but provides a simplified interface to complex queries.
+
+```sql
+CREATE OR REPLACE VIEW dsongcp.flights AS
+
+SELECT
+  FlightDate AS FL_DATE,
+  Reporting_Airline AS UNIQUE_CARRIER,
+  OriginAirportSeqID AS ORIGIN_AIRPORT_SEQ_ID,
+  Origin AS ORIGIN,
+  DestAirportSeqID AS DEST_AIRPORT_SEQ_ID,
+  Dest AS DEST,
+  CRSDepTime AS CRS_DEP_TIME,
+  DepTime AS DEP_TIME,
+  CAST(DepDelay AS FLOAT64) AS DEP_DELAY,
+  CAST(TaxiOut AS FLOAT64) AS TAXI_OUT,
+  WheelsOff AS WHEELS_OFF,
+  WheelsOn AS WHEELS_ON,
+  CAST(TaxiIn AS FLOAT64) AS TAXI_IN,
+  CRSArrTime AS CRS_ARR_TIME,
+  ArrTime AS ARR_TIME,
+  CAST(ArrDelay AS FLOAT64) AS ARR_DELAY,
+  IF(Cancelled = '1.00', True, False) AS CANCELLED,
+  IF(Diverted = '1.00', True, False) AS DIVERTED,
+  DISTANCE
+FROM dsongcp.flights_raw;
+```

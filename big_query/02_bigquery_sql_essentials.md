@@ -4,6 +4,8 @@ One of BigQuery's most powerful features is the access to **Public Datasets**, b
 
 > **Prerequisite**: Ensure you have created the `dsongcp` dataset and loaded `flights_raw` in [Tutorial 01: Ingestion](./01_bigquery_ingestion_tutorial.md).
 
+---
+
 ## 1. Querying Your Own Data (`dsongcp`)
 
 Now that you've ingested data, let's run a query on your `dsongcp` dataset to see the raw flight information:
@@ -31,11 +33,26 @@ Try running this query to find trip durations in minutes:
 
 ```sql
 SELECT
-  tripduration / 60 as duration_trip_minutes
+  tripduration/60 as duration_trip_minutes
 FROM
   `bigquery-public-data.new_york_citibike.citibike_trips`
 WHERE tripduration IS NOT NULL
-LIMIT 10;
+LIMIT 200;
+```
+
+### Basic Aggregations
+Count the total number of trips and see the distribution by gender:
+
+```sql
+-- Total count of trips
+SELECT COUNT(*) FROM `bigquery-public-data.new_york_citibike.citibike_trips`;
+
+-- Trips by gender
+SELECT 
+  gender, 
+  COUNT(*) as total_trips
+FROM `bigquery-public-data.new_york_citibike.citibike_trips`
+GROUP BY gender;
 ```
 
 ---
@@ -43,33 +60,30 @@ LIMIT 10;
 ## 3. SQL Syntax Tricks
 
 ### The `EXCEPT` Clause
-Instead of listing every column, you can select all *except* a few. Let's try this on your flights data:
+Instead of listing every column, you can select all *except* a few.
 
 ```sql
 SELECT
-  * EXCEPT(Year, Quarter, Month)
+  * EXCEPT(stoptime, end_station_id)
 FROM
-  `dsongcp.flights_raw`
-LIMIT 10;
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+WHERE tripduration IS NOT NULL
+LIMIT 200;
 ```
 
 ### Common Table Expressions (CTEs)
-Use the `WITH` clause to make your queries more readable. Here we combine your flights data with a filter:
+Use the `WITH` clause to make your queries more readable. This example filters for male riders using a CTE:
 
 ```sql
-WITH delayed_flights AS (
+WITH all_data AS (
   SELECT
-    Origin, Dest, DepDelay
+    * EXCEPT(stoptime, end_station_id)
   FROM
-    `dsongcp.flights_raw`
-  WHERE DepDelay > 15
+    `bigquery-public-data.new_york_citibike.citibike_trips`
+  WHERE tripduration IS NOT NULL
+  LIMIT 200
 )
-SELECT 
-  Origin, 
-  COUNT(*) as num_delayed 
-FROM delayed_flights 
-GROUP BY Origin 
-ORDER BY num_delayed DESC;
+SELECT * FROM all_data WHERE gender = 'male';
 ```
 
 ---
@@ -77,24 +91,80 @@ ORDER BY num_delayed DESC;
 ## 4. String and Date Functions
 
 ### Date and Time Extraction
-Extract parts of a date (Year, Month, Day) from your `flights_raw` table using `EXTRACT`:
+Extract parts of a date (Year, Month, Day) using `EXTRACT`. Let's use the San Francisco Bikeshare dataset:
 
 ```sql
 SELECT 
-  FlightDate,
-  EXTRACT(YEAR FROM FlightDate) as flight_year,
-  EXTRACT(MONTH FROM FlightDate) as flight_month
-FROM `dsongcp.flights_raw`
-LIMIT 5;
+  installation_date,
+  EXTRACT(YEAR FROM installation_date) as year
+FROM `bigquery-public-data.san_francisco.bikeshare_stations`
+LIMIT 10;
 ```
 
-### String Manipulation (Public Data Example)
-Using `REPLACE` and `SPLIT` on the San Francisco Bikeshare dataset:
+### String Manipulation
+Using `REPLACE` and `SPLIT` to clean and tokenize station names:
 
 ```sql
--- Replace 'at' with a space
+-- Replace ' at ' with a space
 SELECT REPLACE(name, ' at ', ' ')
+FROM `bigquery-public-data.san_francisco.bikeshare_stations`
+LIMIT 5;
+
+-- Split the name into an array of words
+SELECT SPLIT(REPLACE(name, ' at ', ' '), ' ')
 FROM `bigquery-public-data.san_francisco.bikeshare_stations`
 LIMIT 5;
 ```
 
+---
+
+## 5. Partitioning and Clustering
+
+To optimize costs and performance on large tables, you should use partitioning (dividing data by a column like `date`) and clustering (sorting data within partitions).
+
+### Create a Partitioned Table
+This command creates a new table partitioned by month using the Chicago Crime public dataset:
+
+```bash
+bq query \
+ --use_legacy_sql=false \
+ --destination_table partition_ds.crime_partition \
+ --time_partitioning_field date \
+ --time_partitioning_type MONTH \
+ 'SELECT * FROM `bigquery-public-data.chicago_crime.crime`'
+```
+
+### Querying Partitioned Data
+When you query a partitioned table with a filter on the partitioning column, BigQuery only reads the relevant partitions (saving money!):
+
+```sql
+SELECT * FROM `partition_ds.crime_partition` 
+WHERE date = '2006-02-14 04:15:00 UTC';
+
+-- Comparing with the original public dataset
+SELECT * FROM `bigquery-public-data.chicago_crime.crime` 
+WHERE date = '2006-02-14 04:15:00 UTC'
+AND primary_type = 'INTIMIDATION';
+```
+
+### Inspecting Partitions
+You can query the `INFORMATION_SCHEMA` to see metadata about your partitions:
+
+```sql
+SELECT *
+FROM `partition_ds.INFORMATION_SCHEMA.PARTITIONS`
+WHERE table_name = 'crime_partition';
+```
+
+### Create a Clustered and Partitioned Table
+Clustering further sorts data within partitions for even faster filtering on specific columns:
+
+```bash
+bq query \
+ --use_legacy_sql=false \
+ --clustering_fields primary_type \
+ --destination_table partition_ds.crime_partition_cluster \
+ --time_partitioning_field date \
+ --time_partitioning_type MONTH \
+ 'SELECT * FROM `bigquery-public-data.chicago_crime.crime`'
+```

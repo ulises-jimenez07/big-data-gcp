@@ -1,94 +1,150 @@
-# BigQuery: Views and Advanced Analytics
+# BigQuery: Advanced Analytics & Window Functions
 
-This tutorial covers the creation of **Views** for data abstraction and using advanced SQL to calculate performance metrics directly within BigQuery.
+In this tutorial, we transition from basic SQL to **Advanced Analytics**, using BigQuery's public datasets to explore Window Functions, Geospatial Analysis, and complex data structures.
 
-> **Prerequisite**: Ensure you have completed [Tutorial 01: Ingestion](./01_bigquery_ingestion_tutorial.md) and created the `dsongcp` dataset and `flights_raw` table.
-
-## 1. Creating Views
-
-A View is a virtual table defined by a SQL query. It doesn't store data itself but provides a simplified interface to complex queries.
+## 1. Creating Managed Views
+A View is a virtual table defined by a SQL query. It allows you to abstract complex logic (like unit conversions or data cleaning) for other users.
 
 ```sql
-CREATE OR REPLACE VIEW dsongcp.flights AS
+-- Create a view to clean NYC Citibike data
+CREATE OR REPLACE VIEW `your-project.your_dataset.citibike_analytics` AS
 SELECT
-  FlightDate AS FL_DATE,
-  Reporting_Airline AS UNIQUE_CARRIER,
-  CAST(DepDelay AS FLOAT64) AS DEP_DELAY,
-  CAST(ArrDelay AS FLOAT64) AS ARR_DELAY,
-  DISTANCE
-FROM dsongcp.flights_raw;
+  bikeid,
+  tripduration / 60 AS duration_minutes,
+  CAST(starttime AS DATETIME) AS start_time,
+  start_station_name,
+  end_station_name,
+  usertype,
+  IF(gender = 'male', 1, 0) AS is_male,
+  EXTRACT(YEAR FROM starttime) - birth_year AS approximate_age
+FROM
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+WHERE tripduration IS NOT NULL AND birth_year IS NOT NULL;
 ```
 
 ---
 
-## 2. Joins and Structs
+## 2. Window Functions (Analytical SQL)
+Window functions allow you to perform calculations across a set of table rows that are somehow related to the current row.
 
-BigQuery supports complex data types like `STRUCT` and `ARRAY`.
-
-### Example: Average Delays with Location
-Using `ARRAY_AGG` and `STRUCT` to keep the latest delay info for each airport:
+### Ranking and Deduplication
+Find the top 3 longest trips per station using `RANK()`:
 
 ```sql
-SELECT 
-    AIRPORT,
-    CONCAT(LATITUDE, ',', LONGITUDE) AS LOCATION,
-    ARRAY_AGG(
-        STRUCT(AVG_ARR_DELAY, AVG_DEP_DELAY, NUM_FLIGHTS, END_TIME)
-        ORDER BY END_TIME DESC LIMIT 1) AS latest_info
-FROM ds_flights.airport_delays
-GROUP BY AIRPORT, LONGITUDE, LATITUDE;
+SELECT
+  start_station_name,
+  tripduration,
+  RANK() OVER(PARTITION BY start_station_id ORDER BY tripduration DESC) as trip_rank
+FROM
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+QUALIFY trip_rank <= 3
+LIMIT 10;
+```
+
+### Cumulative Sums (Running Totals)
+Calculate the running total of trip durations per day:
+
+```sql
+SELECT
+  DATE(starttime) as trip_date,
+  SUM(tripduration) as daily_duration,
+  SUM(SUM(tripduration)) OVER(ORDER BY DATE(starttime)) as cumulative_duration
+FROM
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+GROUP BY trip_date
+LIMIT 10;
 ```
 
 ---
 
-## 3. Calculating Metrics in SQL
+## 3. Geospatial Analytics (GIS)
+BigQuery has native support for geographic data types. You can calculate distances, areas, and intersections between points and polygons.
 
-You can calculate machine learning metrics like **Accuracy**, **False Positive Rate (FPR)**, and **False Negative Rate (FNR)** without leaving SQL.
-
-### Step 1: Using `UNNEST` to Test Thresholds
-This query simulates testing different "delay thresholds" (5, 10, 15, etc.) to see which one predicts arrival delays best.
+### Calculating Distance Between Stations
+Using `ST_DISTANCE` and `ST_GEOGPOINT` to find the Euclidean distance of a trip:
 
 ```sql
-SELECT 
-    THRESH,
-    COUNTIF(dep_delay < THRESH AND arr_delay < 15) AS true_positives,
-    COUNTIF(dep_delay < THRESH AND arr_delay >= 15) AS false_positives,
-    COUNTIF(dep_delay >= THRESH AND arr_delay < 15) AS false_negatives,
-    COUNTIF(dep_delay >= THRESH AND arr_delay >= 15) AS true_negatives,
-    COUNT(*) AS total
-FROM dsongcp.flights, UNNEST([5, 10, 15, 20]) AS THRESH
-WHERE arr_delay IS NOT NULL AND dep_delay IS NOT NULL
-GROUP BY THRESH;
+SELECT
+  bikeid,
+  ST_DISTANCE(
+    ST_GEOGPOINT(start_station_longitude, start_station_latitude),
+    ST_GEOGPOINT(end_station_longitude, end_station_latitude)
+  ) AS distance_meters
+FROM
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+WHERE start_station_longitude IS NOT NULL AND end_station_longitude IS NOT NULL
+LIMIT 10;
 ```
 
-### Step 2: Final Accuracy Calculation
-Wrap the logic in a CTE to compute the final percentages:
+---
+
+## 4. Advanced ML Performance Metrics
+You can use SQL to evaluate the effectiveness of an "if-then" rule or a machine learning model by calculating a **Contingency Table**.
+
+### Accuracy, Precision, and FPR
+Let's see if a simple rule—*"If a taxi trip is longer than 5km, the tip will be > $5"*—is actually true.
 
 ```sql
 WITH contingency_table AS (
-  -- (Query from above goes here)
+  SELECT
+    ST_DISTANCE(ST_GEOGPOINT(pickup_longitude, pickup_latitude), 
+                ST_GEOGPOINT(dropoff_longitude, dropoff_latitude)) / 1000 AS dist_km,
+    tips > 5 AS actual_high_tip,
+    (ST_DISTANCE(ST_GEOGPOINT(pickup_longitude, pickup_latitude), 
+                 ST_GEOGPOINT(dropoff_longitude, dropoff_latitude)) / 1000) > 5 AS predicted_high_tip
+  FROM
+    `bigquery-public-data.chicago_taxi_trips.taxi_trips`
+  WHERE pickup_longitude IS NOT NULL AND dropoff_longitude IS NOT NULL
+  LIMIT 100000
+),
+metrics AS (
+  SELECT
+    COUNTIF(predicted_high_tip AND actual_high_tip) AS true_positives,
+    COUNTIF(predicted_high_tip AND NOT actual_high_tip) AS false_positives,
+    COUNTIF(NOT predicted_high_tip AND actual_high_tip) AS false_negatives,
+    COUNTIF(NOT predicted_high_tip AND NOT actual_high_tip) AS true_negatives,
+    COUNT(*) AS total
+  FROM contingency_table
 )
 SELECT
-   THRESH,
-   ROUND((true_positives + true_negatives)/total, 2) AS accuracy,
-   ROUND(false_positives/(true_positives + false_positives), 2) AS fpr,
-   ROUND(false_negatives/(false_negatives + true_negatives), 2) AS fnr
-FROM contingency_table 
-ORDER BY accuracy DESC;
+  ROUND((true_positives + true_negatives) / total, 2) AS accuracy,
+  ROUND(false_positives / (true_positives + false_positives), 2) AS false_discovery_rate,
+  ROUND(false_negatives / (false_negatives + true_negatives), 2) AS false_omission_rate
+FROM metrics;
 ```
 
 ---
 
-## 4. Case Logic
-Use `CASE` to create labels for your data:
+## 5. Working with Arrays & Structs
+BigQuery supports nested and repeated data, common in JSON logs and event data.
+
+### Pivot Data with `UNNEST`
+Turn a pipe-separated string (like StackOverflow tags) into individual rows for analysis:
 
 ```sql
 SELECT
-  ARR_DELAY,
-  CASE 
-    WHEN ARR_DELAY < 15 THEN "ON TIME"
-    ELSE "LATE"
-  END AS status
-FROM dsongcp.flights
-LIMIT 5;
+  tag,
+  COUNT(*) as frequency
+FROM
+  `bigquery-public-data.stackoverflow.posts_questions`,
+  UNNEST(SPLIT(tags, '|')) as tag
+GROUP BY tag
+ORDER BY frequency DESC
+LIMIT 10;
+```
+
+### Complex Aggregations with `ARRAY_AGG` and `STRUCT`
+Capture the "latest" trip info for each station in a single row:
+
+```sql
+SELECT
+  start_station_name,
+  ARRAY_AGG(
+    STRUCT(tripduration, usertype, starttime)
+    ORDER BY starttime DESC LIMIT 1
+  )[OFFSET(0)] as latest_trip
+FROM
+  `bigquery-public-data.new_york_citibike.citibike_trips`
+GROUP BY start_station_name
+LIMIT 10;
 ```
