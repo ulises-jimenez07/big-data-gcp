@@ -61,10 +61,11 @@ p = beam.Pipeline(InteractiveRunner(), options=options)
 ib.watch(locals())
 
 # 3. Read a small subset of public data (USA Names)
+# We select specifically from NY to guarantee results for our filter
 raw_data = (
     p 
     | 'Read Sample' >> beam.io.ReadFromBigQuery(
-        query='SELECT name, number, state FROM `bigquery-public-data.usa_names.usa_1910_current` LIMIT 100',
+        query="SELECT name, number, state FROM `bigquery-public-data.usa_names.usa_1910_current` WHERE state = 'NY' LIMIT 10",
         use_standard_sql=True
     )
 )
