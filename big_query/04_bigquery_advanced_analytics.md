@@ -2,29 +2,8 @@
 
 In this tutorial, we transition from basic SQL to **Advanced Analytics**, using BigQuery's public datasets to explore Window Functions, Geospatial Analysis, and complex data structures.
 
-## 1. Creating Managed Views
-A View is a virtual table defined by a SQL query. It allows you to abstract complex logic (like unit conversions or data cleaning) for other users.
 
-```sql
--- Create a view to clean NYC Citibike data
-CREATE OR REPLACE VIEW `your-project.your_dataset.citibike_analytics` AS
-SELECT
-  bikeid,
-  tripduration / 60 AS duration_minutes,
-  CAST(starttime AS DATETIME) AS start_time,
-  start_station_name,
-  end_station_name,
-  usertype,
-  IF(gender = 'male', 1, 0) AS is_male,
-  EXTRACT(YEAR FROM starttime) - birth_year AS approximate_age
-FROM
-  `bigquery-public-data.new_york_citibike.citibike_trips`
-WHERE tripduration IS NOT NULL AND birth_year IS NOT NULL;
-```
-
----
-
-## 2. Window Functions (Analytical SQL)
+## 1. Window Functions (Analytical SQL)
 Window functions allow you to perform calculations across a set of table rows that are somehow related to the current row.
 
 ### Ranking and Deduplication
@@ -45,19 +24,26 @@ LIMIT 10;
 Calculate the running total of trip durations per day:
 
 ```sql
+WITH daily_trips AS (
+  SELECT
+    DATE(starttime) as trip_date,
+    SUM(tripduration) as daily_duration
+  FROM
+    `bigquery-public-data.new_york_citibike.citibike_trips`
+  GROUP BY trip_date
+)
 SELECT
-  DATE(starttime) as trip_date,
-  SUM(tripduration) as daily_duration,
-  SUM(SUM(tripduration)) OVER(ORDER BY DATE(starttime)) as cumulative_duration
-FROM
-  `bigquery-public-data.new_york_citibike.citibike_trips`
-GROUP BY trip_date
+  trip_date,
+  daily_duration,
+  SUM(daily_duration) OVER(ORDER BY trip_date) as cumulative_duration
+FROM daily_trips
+ORDER BY trip_date
 LIMIT 10;
 ```
 
 ---
 
-## 3. Geospatial Analytics (GIS)
+## 2. Geospatial Analytics (GIS)
 BigQuery has native support for geographic data types. You can calculate distances, areas, and intersections between points and polygons.
 
 ### Calculating Distance Between Stations
@@ -78,7 +64,7 @@ LIMIT 10;
 
 ---
 
-## 4. Advanced ML Performance Metrics
+## 3. Advanced ML Performance Metrics
 You can use SQL to evaluate the effectiveness of an "if-then" rule or a machine learning model by calculating a **Contingency Table**.
 
 ### Accuracy, Precision, and FPR
@@ -115,7 +101,7 @@ FROM metrics;
 
 ---
 
-## 5. Working with Arrays & Structs
+## 4. Working with Arrays & Structs
 BigQuery supports nested and repeated data, common in JSON logs and event data.
 
 ### Pivot Data with `UNNEST`
