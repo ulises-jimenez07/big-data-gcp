@@ -18,7 +18,7 @@ SELECT
   DepDelay 
 FROM 
   `dsongcp.flights_raw`
-WHERE DepDelay > 0
+WHERE CAST(DepDelay AS FLOAT64) > 0
 LIMIT 10;
 ```
 
@@ -118,53 +118,8 @@ LIMIT 5;
 
 ---
 
-## 5. Partitioning and Clustering
+## 5. Next Steps
 
-To optimize costs and performance on large tables, you should use partitioning (dividing data by a column like `date`) and clustering (sorting data within partitions).
+In this tutorial, you've learned the essentials of BigQuery SQL. To dive deeper into optimizing your tables for cost and performance, proceed to:
 
-### Create a Partitioned Table
-This command creates a new table partitioned by month using the Chicago Crime public dataset:
-
-```bash
-bq query \
- --use_legacy_sql=false \
- --destination_table partition_ds.crime_partition \
- --time_partitioning_field date \
- --time_partitioning_type MONTH \
- 'SELECT * FROM `bigquery-public-data.chicago_crime.crime`'
-```
-
-### Querying Partitioned Data
-When you query a partitioned table with a filter on the partitioning column, BigQuery only reads the relevant partitions (saving money!):
-
-```sql
-SELECT * FROM `partition_ds.crime_partition` 
-WHERE date = '2006-02-14 04:15:00 UTC';
-
--- Comparing with the original public dataset
-SELECT * FROM `bigquery-public-data.chicago_crime.crime` 
-WHERE date = '2006-02-14 04:15:00 UTC'
-AND primary_type = 'INTIMIDATION';
-```
-
-### Inspecting Partitions
-You can query the `INFORMATION_SCHEMA` to see metadata about your partitions:
-
-```sql
-SELECT *
-FROM `partition_ds.INFORMATION_SCHEMA.PARTITIONS`
-WHERE table_name = 'crime_partition';
-```
-
-### Create a Clustered and Partitioned Table
-Clustering further sorts data within partitions for even faster filtering on specific columns:
-
-```bash
-bq query \
- --use_legacy_sql=false \
- --clustering_fields primary_type \
- --destination_table partition_ds.crime_partition_cluster \
- --time_partitioning_field date \
- --time_partitioning_type MONTH \
- 'SELECT * FROM `bigquery-public-data.chicago_crime.crime`'
-```
+- [Tutorial 03: Partitioning and Clustering](./03_bigquery_optimization.md)

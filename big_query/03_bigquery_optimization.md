@@ -1,6 +1,12 @@
-# BigQuery: Partitioning and Clustering
-
 To optimize query performance and reduce costs, BigQuery uses **Partitioning** and **Clustering**. These features allow BigQuery to only scan the data relevant to your query.
+
+## 0. Create the Destination Dataset
+
+Before creating partitioned or clustered tables, you must have a destination dataset.
+
+```bash
+bq mk --location=US partition_ds
+```
 
 ## 1. Partitioning
 
@@ -16,7 +22,7 @@ You can create a partitioned table using the result of a query. Let's partition 
 ```bash
 bq query \
  --use_legacy_sql=false \
- --destination_table dsongcp.crime_partitioned \
+ --destination_table partition_ds.crime_partitioned \
  --time_partitioning_field date \
  --time_partitioning_type MONTH \
  'SELECT * FROM `bigquery-public-data.chicago_crime.crime`'
@@ -36,7 +42,7 @@ bq query \
 ```bash
 bq query \
  --use_legacy_sql=false \
- --destination_table dsongcp.crime_optimized \
+ --destination_table partition_ds.crime_optimized \
  --time_partitioning_field date \
  --time_partitioning_type MONTH \
  --clustering_fields primary_type \
@@ -53,8 +59,8 @@ To enjoy the benefits of partitioning, you MUST include the partitioning field i
 -- This query only scans the partition for Feb 2006
 SELECT 
   * 
-FROM `dsongcp.crime_optimized` 
-WHERE date = '2006-02-14 04:15:00 UTC'
+FROM `partition_ds.crime_optimized` 
+WHERE TIMESTAMP_TRUNC(date, MONTH) = TIMESTAMP("2026-02-01")
   AND primary_type = 'INTIMIDATION';
 ```
 
@@ -67,7 +73,7 @@ You can query the table's metadata to see how many partitions exist and how much
 ```sql
 SELECT 
   *
-FROM `dsongcp.INFORMATION_SCHEMA.PARTITIONS`
+FROM `partition_ds.INFORMATION_SCHEMA.PARTITIONS`
 WHERE table_name = 'crime_optimized';
 ```
 
