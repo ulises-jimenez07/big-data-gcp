@@ -21,6 +21,15 @@ Ensure the following APIs are enabled in your GCP project:
 4.  Configure the instance (e.g., `us-central1`, `e2-standard-4`) and click **CREATE**.
 5.  Once running, click **OPEN JUPYTERLAB**.
 
+### Step 3: Install Dependencies
+In the first cell of your new notebook, run the following command to ensure all Beam GCP components are installed:
+
+```python
+%pip install apache-beam[gcp,interactive] pydot
+```
+
+*Note: You may need to restart the kernel after installation.*
+
 ---
 
 ## 2. Interactive Local Development
@@ -28,17 +37,30 @@ Ensure the following APIs are enabled in your GCP project:
 Before running a massive job on Dataflow, you should test your logic locally using the **DirectRunner** or **InteractiveRunner**. This allows you to catch bugs quickly without waiting for cloud resources to provision.
 
 ### Example 1: Filtering and Transforming Names
-In your notebook, run the following code to process a small sample of public data:
+In your notebook, run the following code to process a small sample of public data. **Note:** Even for local testing, you must provide your `project` ID so Beam knows which project to use for BigQuery queries.
 
 ```python
 import apache_beam as beam
 from apache_beam.runners.interactive.interactive_runner import InteractiveRunner
 import apache_beam.runners.interactive.interactive_beam as ib
+from apache_beam.options.pipeline_options import PipelineOptions
 
-# 1. Initialize the Pipeline with InteractiveRunner
-p = beam.Pipeline(InteractiveRunner())
+# REPLACE WITH YOUR PROJECT ID & BUCKET NAME
+PROJECT_ID = 'your-project-id'
+BUCKET_NAME = 'your-gcs-bucket'
 
-# 2. Read a small subset of public data (USA Names)
+# 1. Initialize the Pipeline with InteractiveRunner and Options
+# temp_location is required to export data from BQ
+options = PipelineOptions(
+    project=PROJECT_ID,
+    temp_location=f'gs://{BUCKET_NAME}/temp'
+)
+p = beam.Pipeline(InteractiveRunner(), options=options)
+
+# 2. Tell Interactive Beam to watch the local variables
+ib.watch(locals())
+
+# 3. Read a small subset of public data (USA Names)
 raw_data = (
     p 
     | 'Read Sample' >> beam.io.ReadFromBigQuery(
@@ -70,8 +92,9 @@ ib.show(processed_data)
 This example shows how to perform a local aggregation using the `Count` transform on a sample of crime data.
 
 ```python
-# Create a new pipeline for a new experiment
-p2 = beam.Pipeline(InteractiveRunner())
+# Use the same options from before
+p2 = beam.Pipeline(InteractiveRunner(), options=options)
+ib.watch(locals())
 
 crime_summary = (
     p2
