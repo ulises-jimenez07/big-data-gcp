@@ -116,8 +116,6 @@ FROM `bigquery-public-data.san_francisco.bikeshare_stations`
 LIMIT 5;
 ```
 
-> **Note**: `SPLIT` returns an **ARRAY**. To turn these arrays into individual rows, we use the `UNNEST()` function. You can learn more about this in the [Advanced Analytics tutorial](./04_bigquery_advanced_analytics.md) or the [Deep Dive on Functions](./10_bigquery_functions_deep_dive.md).
-
 ---
 
 ## 5. Next Steps

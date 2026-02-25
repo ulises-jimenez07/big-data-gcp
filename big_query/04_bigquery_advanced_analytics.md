@@ -136,10 +136,3 @@ LIMIT 10;
 ```
 
 ---
-
-## 5. Next Steps
-
-In this tutorial, you've explored advanced SQL techniques. For a more detailed breakdown of how specific analytical functions work behind the scenes, check out:
-
-- [Deep Dive: RANK() and UNNEST() Explained](./10_bigquery_functions_deep_dive.md)
-- [Tutorial 05: BigQuery ML](./05_bigquery_ml.md)
